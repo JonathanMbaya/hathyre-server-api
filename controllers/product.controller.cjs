@@ -28,9 +28,24 @@ const upload = multer({
 }).single('image');
 
 
+
 module.exports.getProducts = async (req, res) => {
   try {
-    const products = await Product.find();
+    
+    // Récupérer tous les produits
+    let products;
+    // Récupération du paramètre de l'URL
+    const latest = req.params.latest;
+    if (latest) {
+      // Si le paramètre "latest" est présent dans la requête, récupérer les 4 derniers produits
+      products = await Product.find({})
+        .sort({ createdAt: -1 }) // Tri par ordre décroissant de createdAt
+        .limit(4); // Limiter les résultats à 4
+    } else {
+      // Sinon, récupérer tous les produits
+      products = await Product.find();
+    }
+
     res.status(200).json(products);
   } catch (error) {
     res.status(500).json({ message: error.message });
@@ -153,4 +168,20 @@ module.exports.dislikeProduct = async (req, res) => {
     res.status(500).json({ message: error.message });
   }
 };
+
+// Fonction pour récupérer les 4 derniers produits
+module.exports.getLatestProducts = async () => {
+  try {
+    // Récupérer les produits triés par ordre décroissant de leur date de création
+    const latestProducts = await Product.find({})
+      .sort({ createdAt: -1 }) // Tri par ordre décroissant de createdAt
+      .limit(4); // Limiter les résultats à 4
+
+    return latestProducts;
+  } catch (error) {
+    console.error("Erreur lors de la récupération des produits :", error);
+    throw error; // Propage l'erreur vers l'appelant
+  }
+};
+
 
