@@ -97,6 +97,7 @@ module.exports.setProduct = async (req, res) => {
 };
 
 
+
 module.exports.editProduct = async (req, res) => {
   try {
     const updatedProduct = await Product.findByIdAndUpdate(req.params.id, req.body, { new: true });
