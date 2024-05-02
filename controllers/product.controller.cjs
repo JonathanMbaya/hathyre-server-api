@@ -53,6 +53,45 @@ module.exports.getProducts = async (req, res) => {
 };
 
 
+
+module.exports.getProductsFilters = async (req, res) => {
+  try {
+    // Récupérer les paramètres de requête pour les filtres
+    const sortByName = req.params.sortByName;
+    const sortByPrice = req.params.sortByPrice;
+
+    let products;
+
+    // Récupérer tous les produits
+    products = Product.find();
+
+    // Si le tri par nom est spécifié, l'appliquer
+    if (sortByName === 'asc') {
+      products.sort({ name: 1 }); // Tri par ordre croissant de nom
+    } else if (sortByName === 'desc') {
+      products.sort({ name: -1 }); // Tri par ordre décroissant de nom
+    }
+
+    // Si le tri par prix est spécifié, l'appliquer
+    if (sortByPrice === 'asc') {
+      products.sort({ price: 1 }); // Tri par ordre croissant de prix
+    } else if (sortByPrice === 'desc') {
+      products.sort({ price: -1 }); // Tri par ordre décroissant de prix
+    }
+
+    // Récupérer les produits après le tri
+    products = await products.exec();
+
+    // Répondre avec les produits filtrés ou tous les produits si aucun filtre n'est spécifié
+    res.status(200).json(products);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+
+
+
 module.exports.getOneProduct = async (req, res) => {
   try {
     const product = await Product.findById(req.params.id);

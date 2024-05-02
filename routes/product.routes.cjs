@@ -2,6 +2,7 @@ const express = require("express");
 const {
   setProduct,
   getProducts,
+  getProductsFilters,
   getOneProduct,
   editProduct,
   deleteProduct,
@@ -17,6 +18,7 @@ const {
 const router = express.Router();
 
 router.get("/products/:latest?", getProducts);
+router.get("/products/filters/:sortByName?/:sortByPrice?", getProductsFilters);
 router.get("/product/:id", getOneProduct);
 router.post("/add/product", setProduct);
 router.put("/update/product/:id", editProduct);
