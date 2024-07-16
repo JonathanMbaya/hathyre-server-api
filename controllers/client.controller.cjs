@@ -1,5 +1,5 @@
 const Client = require("../models/client.model.cjs");
-// const bcrypt = require("bcrypt");
+const bcrypt = require("bcrypt");
 const jwt = require('jsonwebtoken');
 
 module.exports.login = async (req, res) => {
@@ -7,7 +7,7 @@ module.exports.login = async (req, res) => {
 
   try {
     // Recherche de l'utilisateur dans la base de données par son email
-    const client = await Client.findOne({ email });
+    const client = await Client.findOne({ clientEmail: email});
 
     // Vérification de l'existence de l'utilisateur
     if (!client) {
@@ -15,34 +15,25 @@ module.exports.login = async (req, res) => {
     }
 
     // Vérification du mot de passe
-    // const passwordMatch = await bcrypt.compare(password, client.password);
-    // if (!passwordMatch) {
-    //   return res.status(401).json({ message: "Mot de passe incorrect" });
-    // }
-
-    const passwordMatch = await Client.findOne({password});
+    const passwordMatch = await bcrypt.compare(password, client.clientPassword);
     if (!passwordMatch) {
       return res.status(401).json({ message: "Mot de passe incorrect" });
     }
 
     // Création d'un token JWT
-    const token = jwt.sign({ clientToken: Client.token }, 'your_secret_token_key', { expiresIn: '1h' });
+    const token = jwt.sign({ clientId: client._id }, 'your_secret_token_key', { expiresIn: '1h' });
 
     // Envoi de la réponse avec le token et les informations de l'utilisateur
-    res.status(200).json({ client: { _id: client._id, email: client.email, nom: client.nom , prenom: client.prenom, token: client.token }, token});
+    res.status(200).json({ client: { _id: client._id, clientEmail: client.clientEmail, nom: client.nom, prenom: client.prenom, token: client.token }, token });
 
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
 };
 
-
 module.exports.logout = async (req, res) => {
-  // Vous pouvez simplement supprimer le jeton JWT côté client en effaçant le cookie ou en supprimant le stockage local / de session
-  // Par exemple, si vous utilisez des cookies, vous pouvez effacer le cookie contenant le jeton JWT
   res.clearCookie('token').send('Déconnexion réussie');
 };
-
 
 module.exports.getClients = async (req, res) => {
   try {
@@ -66,42 +57,42 @@ module.exports.getOneClient = async (req, res) => {
 };
 
 module.exports.createClient = async (req, res) => {
+  const { nom, prenom, clientEmail, clientPassword, confirmPassword } = req.body;
+
+  if (!clientEmail) {
+      return res.status(400).json({ message: "L'email est requis" });
+  }
+
   try {
-    const { nom, prenom, clientEmail, clientPassword, confirmPassword } = req.body;
+      // Vérifier si l'utilisateur existe déjà
+      const existingClient = await Client.findOne({ clientEmail });
+      if (existingClient) {
+          return res.status(400).json({ message: "Cet utilisateur existe déjà" });
+      }
 
-    // Vérifier si l'utilisateur existe déjà
-    const existingClient = await Client.findOne({ email });
-    if (existingClient) {
-      return res.status(400).json({ message: "Cet utilisateur existe déjà" });
-    }
+      // Vérifier si les mots de passe correspondent
+      if (clientPassword !== confirmPassword) {
+          return res.status(400).json({ message: "Les mots de passe ne correspondent pas" });
+      }
 
-    // Crypter le mot de passe
-    // const salt = await bcrypt.genSalt(10);
-    // const hashedPassword = await bcrypt.hash(password, salt);
+      // Crypter le mot de passe
+      const salt = await bcrypt.genSalt(10);
+      const hashedPassword = await bcrypt.hash(clientPassword, salt);
 
-    // Créer un nouvel utilisateur
-    const newClient = new Client({
-      nom,
-      prenom,
-      clientEmail,
-      clientPassword : clientPassword,
-      confirmPassword: confirmPassword,
- 
-    });
+      // Créer un nouvel utilisateur
+      const newClient = new Client({
+          nom,
+          prenom,
+          clientEmail,
+          clientPassword: hashedPassword, // Stocker le mot de passe crypté
+      });
 
-
-    if (clientPassword === confirmPassword) {
       // Sauvegarder l'utilisateur dans la base de données
       await newClient.save();
-    }
-    else {
-      console.log("Les mots de passe sont différents")
-    }
 
-
-    res.status(201).json(newClient);
+      res.status(201).json(newClient);
   } catch (error) {
-    res.status(500).json({ message: error.message });
+      res.status(500).json({ message: error.message });
   }
 };
 
