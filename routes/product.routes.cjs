@@ -18,6 +18,7 @@ const {
 const router = express.Router();
 
 router.get("/products/:latest?", getProducts);
+router.get("/products/filters/:sortByName?/:sortByPrice?", getProductsFilters);
 router.get("/products/filters/:sortByName?", getProductsFilters);
 router.get("/products/filters/:sortByPrice?", getProductsFilters);
 router.get("/product/:id", getOneProduct);
