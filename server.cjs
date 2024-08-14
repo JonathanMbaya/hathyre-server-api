@@ -19,6 +19,7 @@ app.use(express.urlencoded({ extended: false }));
 app.use("/api", require("./routes/product.routes.cjs"));
 app.use("/api", require("./routes/user.routes.cjs"));
 app.use("/api", require("./routes/client.routes.cjs"));
+app.use("/api", require("./routes/order.routes.cjs"));
 app.post("/stripe/load", async (req, res) => {
     let { amount, id } = req.body;
     console.log("amount & id :", amount, id);

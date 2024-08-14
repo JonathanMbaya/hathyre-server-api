@@ -15,16 +15,28 @@ const clientSchema = new mongoose.Schema({
         type: String,
         required: true,
         unique: true,
-        sparse: false,
     },
     clientPassword: {
         type: String,
         required: true,
     },
+    address: {
+        type: String,
+    },
+    mobile: {
+        type: String,
+    },
     token: {
         type: String,
         unique: true,
-        default: () => crypto.randomBytes(5).toString('hex') // Générer un token aléatoire avec 10 caractères
+        default: () => crypto.randomBytes(5).toString('hex')
+    },
+    favoris: {
+        type: [String],  // Tableau des IDs des produits favoris par exemple
+    },
+    montantDepense: {
+        type: Number,
+        default: 0,
     }
 }, {
     timestamps: true,

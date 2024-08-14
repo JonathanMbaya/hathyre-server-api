@@ -29,6 +29,12 @@ const productSchema = new mongoose.Schema(
     likes: {
       type: [String],
     },
+    category: {
+      type: String,
+      enum: ['savon', 'accessoire', 'Beurres et Huiles'],
+      default: 'En cours de préparation',
+      index: true, // Ajout d'un index pour optimiser les requêtes sur ce champ
+  },
   },
   {
     timestamps: true,

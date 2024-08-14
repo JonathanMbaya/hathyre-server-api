@@ -225,3 +225,15 @@ module.exports.getLatestProducts = async () => {
 };
 
 
+module.exports.getCatProducts = async (category) => {
+  try {
+    const catProducts = await Product.find({ category })
+
+    return catProducts;
+  } catch (error) {
+    console.error("Erreur lors de la récupération des produits :", error);
+    throw error; // Propage l'erreur vers l'appelant
+  }
+};
+
+
