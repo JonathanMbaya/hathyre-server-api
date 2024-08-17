@@ -31,10 +31,20 @@ const productSchema = new mongoose.Schema(
     },
     category: {
       type: String,
-      enum: ['savon', 'accessoire', 'Beurres et Huiles'],
-      default: 'En cours de préparation',
+      enum: ['Savon', 'Accessoires', 'Beurres et huiles'],
+      default: 'Savon',
       index: true, // Ajout d'un index pour optimiser les requêtes sur ce champ
-  },
+    },
+
+    ingredients: {
+      type: String,
+      required: true,
+    },
+
+    conseils: {
+      type: String,
+      required: true,
+    },
   },
   {
     timestamps: true,
