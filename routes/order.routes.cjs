@@ -4,7 +4,8 @@ const {
     getOrders, 
     updateOrderStatus,
     deleteOrder,
-    createOrder
+    createOrder,
+    filterOrdersByStatus
 } = require("../controllers/orders.controller.cjs");
 
 const router = express.Router();
@@ -23,5 +24,7 @@ router.get('/orders', getOrders);
 
 // Récupérer une commande par ID
 router.get('/orders/:id', getOneOrder);
+
+router.get('/orders/filter', filterOrdersByStatus);
 
 module.exports = router;

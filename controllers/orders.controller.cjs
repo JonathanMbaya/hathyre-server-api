@@ -72,6 +72,27 @@ module.exports.getOneOrder = async (req, res) => {
     }
 };
 
+module.exports.filterOrdersByStatus = async (req, res) => {
+    const { status } = req.query; // Récupère le statut de la requête
+
+    if (!status) {
+        return res.status(400).json({ message: "Le statut est requis pour filtrer les commandes." });
+    }
+
+    try {
+        // Filtrer les commandes par statut
+        const orders = await Order.find({ status });
+
+        if (orders.length === 0) {
+            return res.status(404).json({ message: "Aucune commande trouvée pour ce statut." });
+        }
+
+        res.status(200).json(orders);
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+};
+
 module.exports.updateOrderStatus = async (req, res) => {
     const { id } = req.params;
     const { status } = req.body;
@@ -90,6 +111,27 @@ module.exports.updateOrderStatus = async (req, res) => {
         }
 
         res.status(200).json(updatedOrder);
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+};
+
+module.exports.filterOrdersByStatus = async (req, res) => {
+    const { status } = req.query; // Récupère le statut de la requête
+
+    if (!status) {
+        return res.status(400).json({ message: "Le statut est requis pour filtrer les commandes." });
+    }
+
+    try {
+        // Filtrer les commandes par statut
+        const orders = await Order.find({ status });
+
+        if (orders.length === 0) {
+            return res.status(404).json({ message: "Aucune commande trouvée pour ce statut." });
+        }
+
+        res.status(200).json(orders);
     } catch (error) {
         res.status(500).json({ message: error.message });
     }
