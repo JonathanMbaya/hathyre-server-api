@@ -16,7 +16,6 @@ const productSchema = new mongoose.Schema(
     },
     promo: {
       type: Number,
-      required: true,
     },
     stock: {
       type: Number,
@@ -32,8 +31,6 @@ const productSchema = new mongoose.Schema(
     category: {
       type: String,
       enum: ['Savon', 'Accessoires', 'Beurres et huiles'],
-      default: 'Savon',
-      index: true, // Ajout d'un index pour optimiser les requêtes sur ce champ
     },
 
     ingredients: {
@@ -43,7 +40,6 @@ const productSchema = new mongoose.Schema(
 
     conseils: {
       type: String,
-      required: true,
     },
   },
   {

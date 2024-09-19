@@ -9,7 +9,8 @@ const {
   likeProduct,
   dislikeProduct,
   searchProducts,
-  getCatProducts
+  getCatProducts,
+  getLatestProducts
 } = require("../controllers/product.controller.cjs");
 
 
@@ -17,7 +18,8 @@ const {
 const router = express.Router();
 
 // Les tendances de produits récemment ajoutés
-router.get("/products/:latest?", getProducts);
+router.get("/products", getProducts);
+router.get("/products/:latest?", getLatestProducts);
 
 // Filtre de produits
 router.get("/products/filters/:sortByName?/:sortByPrice?", getProductsFilters);

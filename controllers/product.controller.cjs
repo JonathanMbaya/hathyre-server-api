@@ -1,31 +1,21 @@
 const Product = require("../models/product.model.cjs");
+// const multer = require('multer');
+// const path = require('path');
 const multer = require('multer');
-const path = require('path');
+const { CloudinaryStorage } = require('multer-storage-cloudinary');
+const cloudinary = require('../config/cloudinaryConfig.cjs'); // Importer la configuration Cloudinary
 
-// Configuration de Multer pour le stockage des fichiers
-const storage = multer.diskStorage({
-  destination: function (req, file, cb) {
-    cb(null, 'public/images'); // Répertoire de destination des images
+// Configuration de Multer avec Cloudinary Storage
+const storage = new CloudinaryStorage({
+  cloudinary: cloudinary,
+  params: {
+    folder: 'products', // Le nom du dossier où stocker les images dans Cloudinary
+    allowed_formats: ['jpg', 'png'], // Formats d'images autorisés
   },
-  filename: function (req, file, cb) {
-    cb(null, Date.now() + path.extname(file.originalname)); // Nom de fichier unique avec l'extension d'origine
-  }
 });
 
-// Filtrer les fichiers acceptés
-const fileFilter = (req, file, cb) => {
-  if (file.mimetype === 'image/jpeg' || file.mimetype === 'image/png') {
-    cb(null, true); // Accepter le fichier
-  } else {
-    cb(new Error('Seuls les fichiers JPEG et PNG sont acceptés.'), false); // Rejeter le fichier
-  }
-};
+const upload = multer({ storage: storage });
 
-// Initialisation de Multer
-const upload = multer({ 
-  storage: storage, 
-  fileFilter: fileFilter 
-}).single('image');
 
 
 
@@ -34,19 +24,10 @@ module.exports.getProducts = async (req, res) => {
     
     // Récupérer tous les produits
     let products;
-    // Récupération du paramètre de l'URL
-    const latest = req.params.latest;
-    if (latest) {
-      // Si le paramètre "latest" est présent dans la requête, récupérer les 4 derniers produits
-      products = await Product.find({})
-        .sort({ createdAt: -1 }) // Tri par ordre décroissant de createdAt
-        .limit(4); // Limiter les résultats à 4
-    } else {
-      // Sinon, récupérer tous les produits
-      products = await Product.find();
-    }
-
+    // Sinon, récupérer tous les produits
+    products = await Product.find();
     res.status(200).json(products);
+    
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
@@ -105,28 +86,37 @@ module.exports.getOneProduct = async (req, res) => {
 };
 
 
+
 module.exports.setProduct = async (req, res) => {
   try {
-    // Appeler la fonction d'upload de Multer
-    upload(req, res, async function (err) {
+    // Utilisation du middleware multer pour uploader l'image avant de traiter le reste
+    upload.single('image')(req, res, async function (err) {
       if (err) {
         return res.status(500).json({ error: err.message });
       }
 
-      // Créer une nouvelle instance de produit avec les détails envoyés dans le corps de la requête
+      // Vérification que le fichier a bien été uploadé
+      if (!req.file) {
+        return res.status(400).json({ error: 'Aucune image uploadée.' });
+      }
+
+      // L'image a été uploadée sur Cloudinary via multer
+      const imageUrl = req.file.path;
+
+      // Création d'une nouvelle instance de produit
       const product = new Product({
         name: req.body.name,
+        category: req.body.category,
         price: req.body.price,
         description: req.body.description,
+        ingredients: req.body.ingredients,
+        conseils: req.body.conseils,
         promo: req.body.promo,
         stock: req.body.stock,
-        image: '/images/' + req.file.filename // Chemin de l'image téléchargée dans le répertoire public
+        image: imageUrl // Stocker l'URL de l'image Cloudinary dans la base de données
       });
 
-      // Enregistrer le produit dans la base de données
       const result = await product.save();
-      
-      // Envoyer la réponse avec le résultat
       res.status(200).json(result);
     });
   } catch (error) {
@@ -134,6 +124,39 @@ module.exports.setProduct = async (req, res) => {
     res.status(500).send("Une erreur s'est produite lors de l'enregistrement du produit.");
   }
 };
+
+// module.exports.setProduct = async (req, res) => 
+//   {
+//     try {
+//     // Appeler la fonction d'upload de Multer
+//     upload(req, res, async function (err) {
+//       if (err) {
+//         return res.status(500).json({ error: err.message });
+//       }
+
+//       // Créer une nouvelle instance de produit avec les détails envoyés dans le corps de la requête
+//       const product = new Product({
+//         name: req.body.name,
+//         category: req.body.category,
+//         price: req.body.price,
+//         description: req.body.description,
+//         ingredients: req.body.ingredients,
+//         conseils: req.body.conseils,
+//         promo: req.body.promo,
+//         stock: req.body.stock,
+//         image: '/images/' + req.file.filename  // Chemin de l'image sauvegardée
+//       });
+      
+//       const result = await product.save();
+//       res.status(200).json(result);
+//       } 
+    
+//     )}
+//     catch (error) {
+//       console.error(error.message);
+//       res.status(500).send("Une erreur s'est produite lors de l'enregistrement du produit.");
+//     }
+//   };
 
 
 

@@ -1,5 +1,8 @@
 const express = require("express");
 const cors = require('cors');
+// const multer = require('multer');
+// const Product = require("./models/product.model.cjs");
+// const path = require('path');
 const connectDB = require("./config/db.cjs");
 const stripe = require("stripe")('sk_test_51PFebILEHh2o4Mgieyrcbf461euTJRaK3DdRFzLWfQ88rnCpRaJmYx3MUOhhNQAoXLBesgL5uQGqnys9FJsYbTVP00W4HbXqym');
 const port = process.env.PORT || 8080;
@@ -46,9 +49,6 @@ app.post("/stripe/load", async (req, res) => {
     }
 });
 
-
-
-// mongodb+srv://jonathanmbaya13:hathyre1234@app-hathyre.grr5ukx.mongodb.net/
   
 
 // Lancer le serveur
