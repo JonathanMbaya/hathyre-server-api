@@ -209,7 +209,7 @@ module.exports.getLatestProducts = async (req, res) => {
     if (latest) {
       products = await Product.find({})
         .sort({ createdAt: -1 }) // Tri par ordre décroissant de createdAt
-        .limit(4); // Limiter les résultats à 4
+        .limit(6); // Limiter les résultats à 6
     } else {
       // Sinon, renvoyer tous les produits
       products = await Product.find({});
