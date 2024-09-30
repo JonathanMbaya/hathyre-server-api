@@ -81,6 +81,7 @@ module.exports.createClient = async (req, res) => {
 
       // Créer un nouvel utilisateur
       const newClient = new Client({
+          sexe,
           nom,
           prenom,
           clientEmail,
@@ -98,21 +99,26 @@ module.exports.createClient = async (req, res) => {
 
 module.exports.editClient = async (req, res) => {
   try {
+    // Rechercher l'utilisateur par son ID
+    const userId = req.params.id;
+
+    // Mettez à jour seulement les champs existants dans la requête
     const updatedClient = await Client.findByIdAndUpdate(
-      req.params.id,
-      req.body,
-      { new: true }
+      userId,
+      { $set: req.body }, // Seulement les champs envoyés dans le body seront mis à jour
+      { new: true, runValidators: true }
     );
+
     if (!updatedClient) {
-      return res
-        .status(404)
-        .json({ message: "Cet utilisateur n'existe pas" });
+      return res.status(404).json({ message: "Cet utilisateur n'existe pas" });
     }
+
     res.status(200).json(updatedClient);
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
 };
+
 
 module.exports.deleteClient = async (req, res) => {
   try {
@@ -125,5 +131,73 @@ module.exports.deleteClient = async (req, res) => {
     res.status(200).json({ message: "Utilisateur supprimé" });
   } catch (error) {
     res.status(500).json({ message: error.message });
+  }
+};
+
+
+// Récupérer les favoris du client
+exports.getFavorites = async (req, res) => {
+  try {
+    const clientId = req.params.userId;
+
+    // Trouver le client et récupérer les favoris
+    const client = await Client.findById(clientId).select('favoris');
+
+    if (!client) {
+      return res.status(404).json({ message: 'Client non trouvé.' });
+    }
+
+    res.json({ favorites: client.favoris });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: 'Erreur lors de la récupération des favoris.' });
+  }
+};
+
+// Ajouter un produit aux favoris
+exports.addFavorite = async (req, res) => {
+  try {
+    const clientId = req.params.userId;
+    const { productId } = req.body;
+
+    // Trouver le client
+    const client = await Client.findById(clientId);
+    if (!client) {
+      return res.status(404).json({ message: 'Client non trouvé.' });
+    }
+
+    // Ajouter le produit aux favoris s'il n'est pas déjà présent
+    if (!client.favoris.includes(productId)) {
+      client.favoris.push(productId);
+      await client.save();
+    }
+
+    res.status(200).json({ message: 'Produit ajouté aux favoris.', favorites: client.favoris });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: 'Erreur lors de l\'ajout du produit aux favoris.' });
+  }
+};
+
+// Supprimer un produit des favoris
+exports.removeFavorite = async (req, res) => {
+  try {
+    const clientId = req.params.userId;
+    const productId = req.params.productId;
+
+    // Trouver le client
+    const client = await Client.findById(clientId);
+    if (!client) {
+      return res.status(404).json({ message: 'Client non trouvé.' });
+    }
+
+    // Supprimer le produit des favoris
+    client.favoris = client.favoris.filter(fav => fav !== productId);
+    await client.save();
+
+    res.status(200).json({ message: 'Produit retiré des favoris.', favorites: client.favoris });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: 'Erreur lors de la suppression du produit des favoris.' });
   }
 };

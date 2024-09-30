@@ -3,6 +3,10 @@ const crypto = require('crypto');
 const bcrypt = require('bcrypt');
 
 const clientSchema = new mongoose.Schema({
+    sexe: {
+        type: String,
+        enum: ['Madame', 'Monsieur', 'Non défini'], 
+    },
     nom: {
         type: String,
         required: true,
@@ -19,6 +23,9 @@ const clientSchema = new mongoose.Schema({
     clientPassword: {
         type: String,
         required: true,
+    },
+    birthday: {
+        type: Date,
     },
     address: {
         type: String,
