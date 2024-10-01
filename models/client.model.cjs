@@ -3,7 +3,7 @@ const crypto = require('crypto');
 const bcrypt = require('bcrypt');
 
 const clientSchema = new mongoose.Schema({
-    sexe: {
+    civilite: {
         type: String,
         enum: ['Madame', 'Monsieur', 'Non défini'], 
     },

@@ -57,7 +57,7 @@ module.exports.getOneClient = async (req, res) => {
 };
 
 module.exports.createClient = async (req, res) => {
-  const { nom, prenom, clientEmail, clientPassword } = req.body;
+  const { nom, prenom, clientEmail, clientPassword, civilite} = req.body;
 
   if (!clientEmail) {
       return res.status(400).json({ message: "L'email est requis" });
@@ -81,7 +81,7 @@ module.exports.createClient = async (req, res) => {
 
       // Créer un nouvel utilisateur
       const newClient = new Client({
-          sexe,
+          civilite,
           nom,
           prenom,
           clientEmail,
