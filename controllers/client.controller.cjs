@@ -57,7 +57,7 @@ module.exports.getOneClient = async (req, res) => {
 };
 
 module.exports.createClient = async (req, res) => {
-  const { nom, prenom, clientEmail, clientPassword, confirmPassword } = req.body;
+  const { nom, prenom, clientEmail, clientPassword } = req.body;
 
   if (!clientEmail) {
       return res.status(400).json({ message: "L'email est requis" });
@@ -70,10 +70,10 @@ module.exports.createClient = async (req, res) => {
           return res.status(400).json({ message: "Cet utilisateur existe déjà" });
       }
 
-      // Vérifier si les mots de passe correspondent
-      if (clientPassword !== confirmPassword) {
-          return res.status(400).json({ message: "Les mots de passe ne correspondent pas" });
-      }
+      // // Vérifier si les mots de passe correspondent
+      // if (clientPassword !== confirmPassword) {
+      //     return res.status(400).json({ message: "Les mots de passe ne correspondent pas" });
+      // }
 
       // Crypter le mot de passe
       const salt = await bcrypt.genSalt(10);
