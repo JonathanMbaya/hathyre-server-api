@@ -1,6 +1,11 @@
 const Client = require("../models/client.model.cjs");
 const bcrypt = require("bcrypt");
 const jwt = require('jsonwebtoken');
+const nodemailer = require('nodemailer');
+const crypto = require('crypto');
+require('dotenv').config(); // Pour utiliser les variables d'environnement
+const emailjs = require('emailjs-com')
+
 
 module.exports.login = async (req, res) => {
   const { email, password } = req.body;
@@ -18,6 +23,11 @@ module.exports.login = async (req, res) => {
     const passwordMatch = await bcrypt.compare(password, client.clientPassword);
     if (!passwordMatch) {
       return res.status(401).json({ message: "Mot de passe incorrect" });
+    }
+
+    // Vérification de la confirmation de l'email
+    if (!client.isEmailVerified && client.isEmailVerified == false) {
+      return res.status(403).json({ message: "Veuillez confirmer votre adresse email avant de vous connecter." });
     }
 
     // Création d'un token JWT
@@ -56,28 +66,47 @@ module.exports.getOneClient = async (req, res) => {
   }
 };
 
-module.exports.createClient = async (req, res) => {
-  const { nom, prenom, clientEmail, clientPassword, civilite} = req.body;
+// Fonction pour générer un token unique
+function generateToken() {
+  return crypto.randomBytes(32).toString('hex');
+}
 
-  if (!clientEmail) {
-      return res.status(400).json({ message: "L'email est requis" });
+// Fonction pour envoyer l'e-mail de vérification
+// const sendVerificationEmail = async (clientEmail, token) => {
+//   const templateParams = {
+//     clientEmail: clientEmail,
+//     token: token,
+//   };
+
+//   try {
+//       await emailjs.send('service_llonc98', 'template_b1ubafd', templateParams, 'BiPjs_8oO8Jd_jRhR');
+//       console.log('Email envoyé avec succès');
+//   } catch (error) {
+//       console.error('Erreur lors de l\'envoi de l\'email:', error);
+//   }
+// };
+
+module.exports.createClient = async (req, res) => {
+  const { nom, prenom, clientEmail, clientPassword, civilite } = req.body;
+
+  // Validation des champs requis
+  if (!nom || !prenom || !clientEmail || !clientPassword) {
+      return res.status(400).json({ message: "Tous les champs sont requis" });
   }
 
   try {
-      // Vérifier si l'utilisateur existe déjà
+      // Vérifier si le client existe déjà
       const existingClient = await Client.findOne({ clientEmail });
       if (existingClient) {
           return res.status(400).json({ message: "Cet utilisateur existe déjà" });
       }
 
-      // // Vérifier si les mots de passe correspondent
-      // if (clientPassword !== confirmPassword) {
-      //     return res.status(400).json({ message: "Les mots de passe ne correspondent pas" });
-      // }
-
       // Crypter le mot de passe
       const salt = await bcrypt.genSalt(10);
       const hashedPassword = await bcrypt.hash(clientPassword, salt);
+
+      // Générer un token de vérification
+      const emailVerificationToken = generateToken();
 
       // Créer un nouvel utilisateur
       const newClient = new Client({
@@ -86,12 +115,43 @@ module.exports.createClient = async (req, res) => {
           prenom,
           clientEmail,
           clientPassword: hashedPassword, // Stocker le mot de passe crypté
+          emailVerificationToken, // Stocker le token de vérification
       });
 
       // Sauvegarder l'utilisateur dans la base de données
       await newClient.save();
 
-      res.status(201).json(newClient);
+      // Option : Envoi de l'email de vérification (si la fonction est activée)
+      // await sendVerificationEmail(clientEmail, emailVerificationToken);
+
+      // Répondre avec un succès, et envoyer le token de vérification au frontend
+      res.status(201).json({ 
+          message: "Utilisateur créé. Veuillez vérifier votre email pour confirmer votre inscription.",
+          emailVerificationToken  // Ajoute le token pour que le frontend puisse l'utiliser
+      });
+
+  } catch (error) {
+      console.error("Erreur lors de la création de l'utilisateur :", error);
+      res.status(500).json({ message: "Erreur lors de la création de l'utilisateur. Veuillez réessayer plus tard." });
+  }
+};
+
+// Contrôleur pour vérifier l'email via le token
+module.exports.verifyEmail = async (req, res) => {
+  const { token } = req.query;
+
+  try {
+      const client = await Client.findOne({ emailVerificationToken: token });
+      if (!client) {
+          return res.status(400).json({ message: 'Token invalide ou expiré' });
+      }
+
+      // Si le token est valide, confirmer l'email
+      client.isEmailVerified = true;
+      client.emailVerificationToken = null; // Supprimer le token après vérification
+      await client.save();
+
+      res.status(200).json({ message: 'Email vérifié avec succès' });
   } catch (error) {
       res.status(500).json({ message: error.message });
   }

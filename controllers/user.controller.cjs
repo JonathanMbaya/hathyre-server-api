@@ -2,7 +2,7 @@ const User = require("../models/user.model.cjs");
 // const bcrypt = require("bcrypt");
 const jwt = require('jsonwebtoken');
 
-module.exports.login = async (req, res) => {
+module.exports.loginAdmin = async (req, res) => {
   const { email, password } = req.body;
 
   try {

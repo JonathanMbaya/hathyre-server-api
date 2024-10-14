@@ -38,6 +38,14 @@ const clientSchema = new mongoose.Schema({
         unique: true,
         default: () => crypto.randomBytes(5).toString('hex')
     },
+    emailVerificationToken: { 
+        type: String, 
+        default: null
+    }, // Token pour la vérification d'email
+    isEmailVerified: { 
+        type: Boolean, 
+        default: false 
+    }, // Indique si l'email a été vérifié
     favoris: {
         type: [String],  // Tableau des IDs des produits favoris par exemple
     },
