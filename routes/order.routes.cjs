@@ -5,7 +5,9 @@ const {
     updateOrderStatus,
     deleteOrder,
     createOrder,
-    filterOrdersByStatus
+    filterOrdersByStatus,
+    createPaypalOrder,
+    capturePaypalOrder,
 } = require("../controllers/orders.controller.cjs");
 
 const router = express.Router();
@@ -26,5 +28,11 @@ router.get('/orders', getOrders);
 router.get('/orders/:id', getOneOrder);
 
 router.get('/orders/filter', filterOrdersByStatus);
+
+// Route pour créer une commande PayPal
+router.post('/paypal/orders',  createPaypalOrder);
+
+// Route pour capturer une commande PayPal
+router.post('/paypal/orders/:orderId/capture', capturePaypalOrder);
 
 module.exports = router;

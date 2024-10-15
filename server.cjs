@@ -1,8 +1,6 @@
 const express = require("express");
+const compression = require('compression');
 const cors = require('cors');
-// const multer = require('multer');
-// const Product = require("./models/product.model.cjs");
-// const path = require('path');
 const connectDB = require("./config/db.cjs");
 const stripe = require("stripe")('sk_test_51PFebILEHh2o4Mgieyrcbf461euTJRaK3DdRFzLWfQ88rnCpRaJmYx3MUOhhNQAoXLBesgL5uQGqnys9FJsYbTVP00W4HbXqym');
 const port = process.env.PORT || 8080;
@@ -11,6 +9,9 @@ const port = process.env.PORT || 8080;
 connectDB();
 
 const app = express();
+
+// Ajouter le middleware compression
+app.use(compression());
 
 // Utilisez le middleware cors globalement
 app.use(cors());

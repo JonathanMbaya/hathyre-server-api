@@ -1,5 +1,56 @@
 const Order = require("../models/orders.model.cjs");
 const stripe = require('stripe')('sk_test_51PFebILEHh2o4Mgieyrcbf461euTJRaK3DdRFzLWfQ88rnCpRaJmYx3MUOhhNQAoXLBesgL5uQGqnys9FJsYbTVP00W4HbXqym');
+const paypal = require('@paypal/checkout-server-sdk');
+
+let environment = new paypal.core.SandboxEnvironment('YOUR_PAYPAL_CLIENT_ID', 'YOUR_PAYPAL_CLIENT_SECRET'); // Remplacez par vos identifiants
+let client = new paypal.core.PayPalHttpClient(environment);
+
+// Méthode pour créer une commande PayPal
+module.exports.createPaypalOrder = async (req, res) => {
+    const { articles } = req.body;
+
+    try {
+        const montantTotal = articles.reduce((acc, article) => acc + article.price * article.quantity, 0);
+
+        // Créer la commande PayPal
+        const request = new paypal.orders.OrdersCreateRequest();
+        request.prefer("return=representation");
+        request.requestBody({
+            intent: 'CAPTURE',
+            purchase_units: [{
+                amount: {
+                    currency_code: 'EUR',
+                    value: montantTotal.toFixed(2),
+                },
+            }],
+        });
+
+        const order = await client.execute(request);
+
+        res.status(201).json({ orderId: order.result.id });
+    } catch (error) {
+        console.error('Erreur lors de la création de la commande PayPal :', error);
+        res.status(500).json({ message: "Une erreur s'est produite lors de la création de la commande PayPal." });
+    }
+};
+
+// Méthode pour capturer une commande PayPal
+module.exports.capturePaypalOrder = async (req, res) => {
+    const { orderId } = req.params;
+
+    try {
+        const request = new paypal.orders.OrdersCaptureRequest(orderId);
+        request.requestBody({});
+
+        const capture = await client.execute(request);
+
+        // Vous pouvez traiter le montant ici
+        res.status(200).json(capture.result);
+    } catch (error) {
+        console.error('Erreur lors de la capture de la commande PayPal :', error);
+        res.status(500).json({ message: "Une erreur s'est produite lors de la capture de la commande PayPal." });
+    }
+};
 
 module.exports.createOrder = async (req, res) => {
     const { nom, prenom, email, address, city, postalCode, country, mobile, articles, status } = req.body;
