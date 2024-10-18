@@ -1,9 +1,11 @@
 const Product = require("../models/product.model.cjs");
 // const multer = require('multer');
-// const path = require('path');
+const path = require('path');
 const multer = require('multer');
 const { CloudinaryStorage } = require('multer-storage-cloudinary');
 const cloudinary = require('../config/cloudinaryConfig.cjs'); // Importer la configuration Cloudinary
+
+
 
 // Configuration de Multer avec Cloudinary Storage
 const storage = new CloudinaryStorage({
@@ -90,21 +92,22 @@ module.exports.getOneProduct = async (req, res) => {
 
 module.exports.setProduct = async (req, res) => {
   try {
-    // Utilisation du middleware multer pour uploader l'image avant de traiter le reste
-    upload.single('image')(req, res, async function (err) {
+    // Utilisation du middleware multer pour uploader les deux images
+    upload.fields([{ name: 'image', maxCount: 1 }, { name: 'image2', maxCount: 1 }])(req, res, async function (err) {
       if (err) {
         return res.status(500).json({ error: err.message });
       }
 
-      // Vérification que le fichier a bien été uploadé
-      if (!req.file) {
-        return res.status(400).json({ error: 'Aucune image uploadée.' });
+      // Vérification que les deux fichiers ont bien été uploadés
+      if (!req.files || !req.files.image || !req.files.image2) {
+        return res.status(400).json({ error: 'Les deux images doivent être uploadées.' });
       }
 
-      // L'image a été uploadée sur Cloudinary via multer
-      const imageUrl = req.file.path;
+      // Récupération des URLs des images uploadées sur Cloudinary
+      const imageUrl1 = req.files.image[0].path;
+      const imageUrl2 = req.files.image2[0].path;
 
-      // Création d'une nouvelle instance de produit
+      // Création d'une nouvelle instance de produit avec les deux images
       const product = new Product({
         name: req.body.name,
         category: req.body.category,
@@ -114,7 +117,8 @@ module.exports.setProduct = async (req, res) => {
         conseils: req.body.conseils,
         promo: req.body.promo,
         stock: req.body.stock,
-        image: imageUrl // Stocker l'URL de l'image Cloudinary dans la base de données
+        image: imageUrl1, // URL de la première image Cloudinary
+        image2: imageUrl2 // URL de la deuxième image Cloudinary
       });
 
       const result = await product.save();

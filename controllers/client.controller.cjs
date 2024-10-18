@@ -71,21 +71,6 @@ function generateToken() {
   return crypto.randomBytes(32).toString('hex');
 }
 
-// Fonction pour envoyer l'e-mail de vérification
-// const sendVerificationEmail = async (clientEmail, token) => {
-//   const templateParams = {
-//     clientEmail: clientEmail,
-//     token: token,
-//   };
-
-//   try {
-//       await emailjs.send('service_llonc98', 'template_b1ubafd', templateParams, 'BiPjs_8oO8Jd_jRhR');
-//       console.log('Email envoyé avec succès');
-//   } catch (error) {
-//       console.error('Erreur lors de l\'envoi de l\'email:', error);
-//   }
-// };
-
 module.exports.createClient = async (req, res) => {
   const { nom, prenom, clientEmail, clientPassword, civilite } = req.body;
 
@@ -151,7 +136,9 @@ module.exports.verifyEmail = async (req, res) => {
       client.emailVerificationToken = null; // Supprimer le token après vérification
       await client.save();
 
-      res.status(200).json({ message: 'Email vérifié avec succès' });
+      return res.redirect('/confirm-account'); 
+
+      // res.status(200).json({ message: 'Email vérifié avec succès' });
   } catch (error) {
       res.status(500).json({ message: error.message });
   }

@@ -25,6 +25,10 @@ const productSchema = new mongoose.Schema(
       type: String, // URL de l'image téléchargée
       required: true,
     },
+    image2: {
+      type: String, // URL de l'image téléchargée
+      required: true,
+    },
     likes: {
       type: [String],
     },
