@@ -80,7 +80,6 @@ const orderSchema = new mongoose.Schema({
     },
     orderNumber: {
         type: String,
-        required: true
     },
 }, {
     timestamps: true, // Ajoute createdAt et updatedAt
