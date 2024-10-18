@@ -53,7 +53,7 @@ module.exports.capturePaypalOrder = async (req, res) => {
 };
 
 module.exports.createOrder = async (req, res) => {
-    const { nom, prenom, email, address, city, postalCode, country, mobile, articles, status } = req.body;
+    const { nom, prenom, email, address, city, postalCode, country, mobile, articles, status, deliver } = req.body;
 
     try {
         // Calculer le montant total à partir des articles
@@ -80,6 +80,7 @@ module.exports.createOrder = async (req, res) => {
             montantTotal,
             date: new Date(),
             status,
+            deliver
         });
 
         await newOrder.save();
@@ -129,26 +130,49 @@ module.exports.getOneOrder = async (req, res) => {
 
 module.exports.updateOrderStatus = async (req, res) => {
     const { id } = req.params;
-    const { status } = req.body;
+    const { status, deliver } = req.body;
 
-    const validStatuses = ['En cours de préparation', 'Expédié', 'En cours de livraison', 'Livré', 'Annulé'];
+    const validStatuses = ['En cours de préparation', 'Expédié', 'En cours de livraison', 'Livré', 'Annulé', 'Remboursé'];
 
     try {
         if (!validStatuses.includes(status)) {
             return res.status(400).json({ message: "Statut de commande invalide" });
         }
 
-        const updatedOrder = await Order.findByIdAndUpdate(id, { status }, { new: true });
+        // Récupérer la commande pour vérifier son statut actuel
+        const order = await Order.findById(id);
 
-        if (!updatedOrder) {
+        if (!order) {
             return res.status(404).json({ message: "Commande non trouvée" });
         }
 
-        res.status(200).json(updatedOrder);
+        // Règles métier pour le changement de statut
+        if (order.status === 'Expédié' && status === 'En cours de préparation') {
+            return res.status(400).json({ message: "Impossible de revenir à 'En cours de préparation' après expédition" });
+        }
+
+        if (order.status === 'Livré' && status === 'Expédié') {
+            return res.status(400).json({ message: "Impossible de revenir à 'Expédié' après la livraison" });
+        }
+
+        if (order.status === 'Livré' && status === 'Annulé') {
+            return res.status(400).json({ message: "Impossible d'annuler une commande déjà livrée" });
+        }
+
+        // Mettre à jour le statut de la commande
+        order.status = status;
+        if (deliver) {
+            order.deliver = deliver; // Si un transporteur est passé dans la requête
+        }
+
+        await order.save();
+
+        res.status(200).json(order);
     } catch (error) {
         res.status(500).json({ message: error.message });
     }
 };
+
 
 module.exports.filterOrdersByStatus = async (req, res) => {
     const { status } = req.query; // Récupère le statut de la requête

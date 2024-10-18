@@ -68,7 +68,13 @@ const orderSchema = new mongoose.Schema({
     },
     status: {
         type: String,
-        enum: ['En cours de préparation', 'Expédié', 'Livré', 'Annulé'],
+        enum: ['En cours de préparation', 'Expédié', 'Livré', 'Remboursé', 'Annulé'],
+        default: 'En cours de préparation',
+        index: true, // Index pour optimiser les requêtes sur ce champ
+    },
+    deliver: {
+        type: String,
+        enum: ['Colissimo','Chronopost','DHL','FedEx','UPS','TNT'],
         default: 'En cours de préparation',
         index: true, // Index pour optimiser les requêtes sur ce champ
     },

@@ -16,7 +16,7 @@ const router = express.Router();
 router.post('/neworders', createOrder);
 
 // Mettre à jour le statut d'une commande
-router.patch('/orders/:id/status', updateOrderStatus);
+router.put('/orders/:id/status', updateOrderStatus);
 
 // Supprimer une commande
 router.delete('/orders/:id', deleteOrder);

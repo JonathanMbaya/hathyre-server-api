@@ -136,7 +136,7 @@ module.exports.verifyEmail = async (req, res) => {
       client.emailVerificationToken = null; // Supprimer le token après vérification
       await client.save();
 
-      return res.redirect('/confirm-account'); 
+      return res.redirect('https://www.hathyre.com/confirm-account'); 
 
       // res.status(200).json({ message: 'Email vérifié avec succès' });
   } catch (error) {
