@@ -1,10 +1,8 @@
 const Product = require("../models/product.model.cjs");
-// const multer = require('multer');
 const path = require('path');
 const multer = require('multer');
 const { CloudinaryStorage } = require('multer-storage-cloudinary');
 const cloudinary = require('../config/cloudinaryConfig.cjs'); // Importer la configuration Cloudinary
-
 
 
 // Configuration de Multer avec Cloudinary Storage
@@ -17,9 +15,6 @@ const storage = new CloudinaryStorage({
 });
 
 const upload = multer({ storage: storage });
-
-
-
 
 module.exports.getProducts = async (req, res) => {
   try {
@@ -35,8 +30,6 @@ module.exports.getProducts = async (req, res) => {
     res.status(500).json({ message: "Une erreur est survenue lors de la récupération des produits." });
   }
 };
-
-
 
 module.exports.getProductsFilters = async (req, res) => {
   try {
@@ -73,9 +66,6 @@ module.exports.getProductsFilters = async (req, res) => {
   }
 };
 
-
-
-
 module.exports.getOneProduct = async (req, res) => {
   try {
     const product = await Product.findById(req.params.id);
@@ -87,8 +77,6 @@ module.exports.getOneProduct = async (req, res) => {
     res.status(500).json({ message: error.message });
   }
 };
-
-
 
 module.exports.setProduct = async (req, res) => {
   try {
@@ -130,7 +118,6 @@ module.exports.setProduct = async (req, res) => {
   }
 };
 
-
 module.exports.editProduct = async (req, res) => {
   try {
     const updatedProduct = await Product.findByIdAndUpdate(req.params.id, req.body, { new: true });
@@ -168,8 +155,6 @@ module.exports.searchProducts = async (req, res) => {
   }
 };
 
-
-
 module.exports.likeProduct = async (req, res) => {
   try {
     const product = await Product.findByIdAndUpdate(
@@ -185,7 +170,6 @@ module.exports.likeProduct = async (req, res) => {
     res.status(500).json({ message: error.message });
   }
 };
-
 
 module.exports.dislikeProduct = async (req, res) => {
   try {
@@ -226,8 +210,6 @@ module.exports.getLatestProducts = async (req, res) => {
   }
 };
 
-
-
 module.exports.getCatProducts = async (category) => {
   try {
     const catProducts = await Product.find({ category })
@@ -239,5 +221,3 @@ module.exports.getCatProducts = async (category) => {
     throw error;
   }
 };
-
-
