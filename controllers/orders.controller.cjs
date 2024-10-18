@@ -129,47 +129,26 @@ module.exports.getOneOrder = async (req, res) => {
 
 
 module.exports.updateOrderStatus = async (req, res) => {
-    const { id } = req.params;
-    const { status, deliver } = req.body;
-
-    const validStatuses = ['En cours de préparation', 'Expédié', 'En cours de livraison', 'Livré', 'Annulé', 'Remboursé'];
-
+    const orderId = req.params.id;
+    const { status, orderNumber, deliver } = req.body; // Récupération du statut, numéro de suivi et transporteur
+  
     try {
-        if (!validStatuses.includes(status)) {
-            return res.status(400).json({ message: "Statut de commande invalide" });
-        }
-
-        // Récupérer la commande pour vérifier son statut actuel
-        const order = await Order.findById(id);
-
-        if (!order) {
-            return res.status(404).json({ message: "Commande non trouvée" });
-        }
-
-        // Règles métier pour le changement de statut
-        if (order.status === 'Expédié' && status === 'En cours de préparation') {
-            return res.status(400).json({ message: "Impossible de revenir à 'En cours de préparation' après expédition" });
-        }
-
-        if (order.status === 'Livré' && status === 'Expédié') {
-            return res.status(400).json({ message: "Impossible de revenir à 'Expédié' après la livraison" });
-        }
-
-        if (order.status === 'Livré' && status === 'Annulé') {
-            return res.status(400).json({ message: "Impossible d'annuler une commande déjà livrée" });
-        }
-
-        // Mettre à jour le statut de la commande
-        order.status = status;
-        if (deliver) {
-            order.deliver = deliver; // Si un transporteur est passé dans la requête
-        }
-
-        await order.save();
-
-        res.status(200).json(order);
+      const order = await Order.findById(orderId);
+  
+      if (!order) {
+        return res.status(404).json({ message: 'Commande non trouvée' });
+      }
+  
+      // Mise à jour du statut, numéro de suivi et transporteur
+      order.status = status;
+      if (orderNumber) order.orderNumber = orderNumber; // Ajoute le numéro de suivi
+      if (deliver) order.deliver = deliver;             // Ajoute le transporteur
+  
+      await order.save(); // Sauvegarde la commande mise à jour
+  
+      res.status(200).json(order); // Retourne la commande mise à jour
     } catch (error) {
-        res.status(500).json({ message: error.message });
+      res.status(500).json({ message: error.message });
     }
 };
 
