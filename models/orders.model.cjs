@@ -75,8 +75,12 @@ const orderSchema = new mongoose.Schema({
     deliver: {
         type: String,
         enum: ['Colissimo','Chronopost','DHL','FedEx','UPS','TNT'],
-        default: 'En cours de préparation',
+        default: 'Chronopost',
         index: true, // Index pour optimiser les requêtes sur ce champ
+    },
+    orderNumber: {
+        type: String,
+        required: true
     },
 }, {
     timestamps: true, // Ajoute createdAt et updatedAt
