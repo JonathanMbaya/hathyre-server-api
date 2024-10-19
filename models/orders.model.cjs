@@ -81,6 +81,9 @@ const orderSchema = new mongoose.Schema({
     orderNumber: {
         type: String,
     },
+    comments: {
+        type: String,
+    },
 }, {
     timestamps: true, // Ajoute createdAt et updatedAt
 });
