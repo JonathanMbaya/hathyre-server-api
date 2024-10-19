@@ -130,7 +130,7 @@ module.exports.getOneOrder = async (req, res) => {
 
 module.exports.updateOrderStatus = async (req, res) => {
     const orderId = req.params.id;
-    const { status, orderNumber, deliver } = req.body; // Récupération du statut, numéro de suivi et transporteur
+    const { status, orderNumber, deliver, comments } = req.body; // Récupération du statut, numéro de suivi et transporteur
   
     try {
       const order = await Order.findById(orderId);
@@ -142,7 +142,8 @@ module.exports.updateOrderStatus = async (req, res) => {
       // Mise à jour du statut, numéro de suivi et transporteur
       order.status = status;
       if (orderNumber) order.orderNumber = orderNumber; // Ajoute le numéro de suivi
-      if (deliver) order.deliver = deliver;             // Ajoute le transporteur
+      if (deliver) order.deliver = deliver;       
+      if (comments) order.comments = comments;       // Ajoute le transporteur
   
       await order.save(); // Sauvegarde la commande mise à jour
   
