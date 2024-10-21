@@ -50,6 +50,45 @@ app.post("/stripe/load", async (req, res) => {
     }
 });
 
+
+// Route pour traiter le remboursement
+app.post('/stripe/refund', async (req, res) => {
+    const { paymentIntentId, amount, orderId, userEmail } = req.body;
+
+    try {
+        // Récupérer la charge associée au Payment Intent
+        const paymentIntent = await stripe.paymentIntents.retrieve(paymentIntentId);
+        const chargeId = paymentIntent.latest_charge;
+
+        if (!chargeId) {
+            return res.status(400).json({ error: 'Aucune charge trouvée pour ce paiement.' });
+        }
+
+        // Vérifier que le montant du remboursement n'excède pas le montant payé
+        if (amount > paymentIntent.amount_received / 100) {
+            return res.status(400).json({ error: 'Le montant du remboursement dépasse le montant du paiement initial.' });
+        }
+
+        // Créer le remboursement
+        const refund = await stripe.refunds.create({
+            charge: chargeId,
+            amount: amount * 100, // Montant en centimes
+        });
+
+        // Mettre à jour la commande dans la base de données
+        await Order.findByIdAndUpdate(orderId, { status: 'Remboursé' });
+
+        // Envoi d'un email de confirmation au client
+        sendRefundEmail(userEmail, refund.id);
+
+        // Réponse en cas de succès
+        return res.status(200).json({ success: true, refund });
+    } catch (error) {
+        console.error('Erreur lors du traitement du remboursement:', error);
+        return res.status(500).json({ error: error.message || 'Erreur lors du traitement du remboursement.' });
+    }
+});
+
   
 
 // Lancer le serveur

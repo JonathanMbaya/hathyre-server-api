@@ -120,15 +120,45 @@ module.exports.setProduct = async (req, res) => {
 
 module.exports.editProduct = async (req, res) => {
   try {
-    const updatedProduct = await Product.findByIdAndUpdate(req.params.id, req.body, { new: true });
-    if (!updatedProduct) {
-      return res.status(404).json({ message: "Ce produit n'existe pas" });
-    }
-    res.status(200).json(updatedProduct);
+    // Utilisation de multer pour gérer les images uploadées (si présentes)
+    upload.fields([{ name: 'image', maxCount: 1 }, { name: 'image2', maxCount: 1 }])(req, res, async function (err) {
+      if (err) {
+        return res.status(500).json({ error: err.message });
+      }
+
+      // Recherche du produit à mettre à jour
+      const product = await Product.findById(req.params.id);
+      if (!product) {
+        return res.status(404).json({ message: "Ce produit n'existe pas" });
+      }
+
+      // Si des nouvelles images sont uploadées, on remplace les anciennes
+      if (req.files && req.files.image) {
+        product.image = req.files.image[0].path;  // Mise à jour de la première image
+      }
+      if (req.files && req.files.image2) {
+        product.image2 = req.files.image2[0].path;  // Mise à jour de la deuxième image
+      }
+
+      // Mise à jour des autres informations du produit
+      product.name = req.body.name || product.name;
+      product.category = req.body.category || product.category;
+      product.price = req.body.price || product.price;
+      product.description = req.body.description || product.description;
+      product.ingredients = req.body.ingredients || product.ingredients;
+      product.conseils = req.body.conseils || product.conseils;
+      product.promo = req.body.promo || product.promo;
+      product.stock = req.body.stock || product.stock;
+
+      // Sauvegarde des modifications
+      const updatedProduct = await product.save();
+      res.status(200).json(updatedProduct);
+    });
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
 };
+
 
 module.exports.deleteProduct = async (req, res) => {
   try {
