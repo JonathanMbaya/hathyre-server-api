@@ -8,6 +8,8 @@ const {
     filterOrdersByStatus,
     createPaypalOrder,
     capturePaypalOrder,
+    refunds,
+    cancelledPay
 } = require("../controllers/orders.controller.cjs");
 
 const router = express.Router();
@@ -34,5 +36,11 @@ router.post('/paypal/orders',  createPaypalOrder);
 
 // Route pour capturer une commande PayPal
 router.post('/paypal/orders/:orderId/capture', capturePaypalOrder);
+
+// Route pour rembourser 
+router.post('/stripe/refund', refunds);
+
+// Route pour annuler un paiement
+router.delete('/stripe/cancel', cancelledPay);
 
 module.exports = router;

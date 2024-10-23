@@ -84,6 +84,13 @@ const orderSchema = new mongoose.Schema({
     comments: {
         type: String,
     },
+    paymentIntentId:{
+        type: String,
+    },
+    paymentMethod:{
+        type: String,
+    }
+
 }, {
     timestamps: true, // Ajoute createdAt et updatedAt
 });

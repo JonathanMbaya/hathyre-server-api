@@ -2,7 +2,7 @@ const express = require("express");
 const compression = require('compression');
 const cors = require('cors');
 const connectDB = require("./config/db.cjs");
-const stripe = require("stripe")('sk_test_51PFebILEHh2o4Mgieyrcbf461euTJRaK3DdRFzLWfQ88rnCpRaJmYx3MUOhhNQAoXLBesgL5uQGqnys9FJsYbTVP00W4HbXqym');
+const stripe = require("stripe")('pk_live_51PFebILEHh2o4MgiphBqg0EArDxRfgbaPJeV5cGbohjQpMJlVd6Cufm2gQZwGwJZ99jRTNFTZw8XU3EDFprY2Vzj00ruJ2DMtL');
 const port = process.env.PORT || 8080;
 
 // Connexion à la base de données
@@ -24,70 +24,63 @@ app.use("/api", require("./routes/product.routes.cjs"));
 app.use("/api", require("./routes/user.routes.cjs"));
 app.use("/api", require("./routes/client.routes.cjs"));
 app.use("/api", require("./routes/order.routes.cjs"));
+
+// Route pour créer et confirmer un PaymentIntent
 app.post("/stripe/load", async (req, res) => {
     let { amount, id } = req.body;
-    console.log("amount & id :", amount, id);
+    console.log("Montant & ID de paiement :", amount, id);
+
     try {
+        // Création du PaymentIntent avec confirmation automatique
         const paymentIntent = await stripe.paymentIntents.create({
-            amount: amount * 100, // Convertir le montant en centimes
+            amount: amount * 100, // Montant en centimes
             currency: "EUR",
             description: "HATHYRE COSMETICS",
-            payment_method: id,
-            confirm: true,
-            return_url: "https://hathyre-web.onrender.com/", // URL de retour après le paiement
+            payment_method: id, // ID de la méthode de paiement (token Stripe)
+            confirm: true, // Confirmation immédiate
+            return_url: "https://hathyre.com/", // URL de retour après le paiement
             automatic_payment_methods: {
-                enabled: true,
+                enabled: true, // Méthodes de paiement automatiques
             },
         });
 
-        res.status(200).json({
-            message: "Paiement réussi",
-            success: true,
+        // Vérifier si le paiement nécessite une action supplémentaire (3D Secure)
+        if (paymentIntent.status === "requires_action" && paymentIntent.next_action) {
+            // Si une action supplémentaire est nécessaire (par exemple, 3D Secure)
+            return res.status(200).json({
+                success: false,
+                requires_action: true,
+                next_action: paymentIntent.next_action, // Retourner l'action à effectuer (3D Secure)
+            });
+        }
+
+        // Si le paiement est confirmé et capturé avec succès
+        if (paymentIntent.status === 'succeeded') {
+            return res.status(200).json({
+                message: "Paiement réussi",
+                success: true,
+                amount_received: paymentIntent.amount_received / 100, // Montant reçu en euros
+            });
+        }
+
+        // Si le paiement est en attente de confirmation supplémentaire
+        return res.status(200).json({
+            message: "Le paiement est en attente d'une action",
+            success: false,
         });
+
     } catch (error) {
         console.error("Erreur lors de la création du paiement :", error);
-        res.status(500).json({ error: "Erreur lors de la création du paiement" });
-    }
-});
 
-
-// Route pour traiter le remboursement
-app.post('/stripe/refund', async (req, res) => {
-    const { paymentIntentId, amount, orderId, userEmail } = req.body;
-
-    try {
-        // Récupérer la charge associée au Payment Intent
-        const paymentIntent = await stripe.paymentIntents.retrieve(paymentIntentId);
-        const chargeId = paymentIntent.latest_charge;
-
-        if (!chargeId) {
-            return res.status(400).json({ error: 'Aucune charge trouvée pour ce paiement.' });
-        }
-
-        // Vérifier que le montant du remboursement n'excède pas le montant payé
-        if (amount > paymentIntent.amount_received / 100) {
-            return res.status(400).json({ error: 'Le montant du remboursement dépasse le montant du paiement initial.' });
-        }
-
-        // Créer le remboursement
-        const refund = await stripe.refunds.create({
-            charge: chargeId,
-            amount: amount * 100, // Montant en centimes
+        // Gestion des erreurs
+        return res.status(500).json({
+            error: "Erreur lors de la création du paiement",
+            details: error.message,
         });
-
-        // Mettre à jour la commande dans la base de données
-        await Order.findByIdAndUpdate(orderId, { status: 'Remboursé' });
-
-        // Envoi d'un email de confirmation au client
-        sendRefundEmail(userEmail, refund.id);
-
-        // Réponse en cas de succès
-        return res.status(200).json({ success: true, refund });
-    } catch (error) {
-        console.error('Erreur lors du traitement du remboursement:', error);
-        return res.status(500).json({ error: error.message || 'Erreur lors du traitement du remboursement.' });
     }
 });
+
+
 
   
 
