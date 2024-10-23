@@ -1,5 +1,5 @@
 const Order = require("../models/orders.model.cjs");
-const stripe = require('stripe')('pk_live_51PFebILEHh2o4MgiphBqg0EArDxRfgbaPJeV5cGbohjQpMJlVd6Cufm2gQZwGwJZ99jRTNFTZw8XU3EDFprY2Vzj00ruJ2DMtL');
+const stripe = require('stripe')('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');
 const paypal = require('@paypal/checkout-server-sdk');
 
 let environment = new paypal.core.SandboxEnvironment('YOUR_PAYPAL_CLIENT_ID', 'YOUR_PAYPAL_CLIENT_SECRET'); // Remplacez par vos identifiants
