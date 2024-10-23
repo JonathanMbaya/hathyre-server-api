@@ -1,47 +1,9 @@
 const Order = require("../models/orders.model.cjs");
-const sgMail = require('@sendgrid/mail');
 const stripe = require('stripe')('pk_live_51PFebILEHh2o4MgiphBqg0EArDxRfgbaPJeV5cGbohjQpMJlVd6Cufm2gQZwGwJZ99jRTNFTZw8XU3EDFprY2Vzj00ruJ2DMtL');
 const paypal = require('@paypal/checkout-server-sdk');
 
 let environment = new paypal.core.SandboxEnvironment('YOUR_PAYPAL_CLIENT_ID', 'YOUR_PAYPAL_CLIENT_SECRET'); // Remplacez par vos identifiants
 let client = new paypal.core.PayPalHttpClient(environment);
-
-
-// Configurez l'API Key
-sgMail.setApiKey(process.env.SENDGRID_API_KEY); // Assurez-vous que votre clé API est stockée dans une variable d'environnement
-
-// Fonction pour envoyer l'e-mail de remboursement
-const sendRefundEmail = async (userEmail, refundId) => {
-    const msg = {
-        to: userEmail, // destinataire
-        from: 'jonathanmbaya13@gmail.com', // expéditeur (doit être une adresse vérifiée dans SendGrid)
-        subject: `Remboursement - HATHYRE COSMETICS - [${refundId}]`,
-        text: `Votre remboursement a été traité avec succès.`, // contenu de l'e-mail
-        html: `
-        <div style="font-family: Arial, sans-serif; background-color: #f9f6f3; padding: 20px; border-radius: 5px; max-width: 600px; margin: auto;">
-            <h1 style="color: #5b3a29;">Remboursement Traitée</h1>
-            <p style="color: #4e3c31; font-size: 16px;">Nous vous informons que votre remboursement a été traité avec succès.</p>
-            <p style="color: #4e3c31; font-size: 16px;">
-                <strong>ID du remboursement :</strong> <span style="color: #5b3a29;">${refundId}</span>
-            </p>
-            <div style="margin-top: 30px; padding: 10px; background-color: #5b3a29; color: #ffffff; border-radius: 5px;">
-                <p style="margin: 0;">Merci d'avoir choisi HATHYRE COSMETICS !</p>
-            </div>
-        </div>
-    `, 
-    };
-
-    try {
-        await sgMail.send(msg);
-        console.log('E-mail de remboursement envoyé à', userEmail);
-    } catch (error) {
-        console.error('Erreur lors de l\'envoi de l\'e-mail :', error);
-        if (error.response) {
-            console.error(error.response.body);
-        }
-    }
-};
-
 
 // Méthode pour créer une commande PayPal
 module.exports.createPaypalOrder = async (req, res) => {
