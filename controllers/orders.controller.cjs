@@ -1,5 +1,6 @@
 const Order = require("../models/orders.model.cjs");
-const stripe = require('stripe')('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');
+const Client = require("../models/client.model.cjs");
+const stripe = require('stripe')('sk_test_51PFebILEHh2o4Mgieyrcbf461euTJRaK3DdRFzLWfQ88rnCpRaJmYx3MUOhhNQAoXLBesgL5uQGqnys9FJsYbTVP00W4HbXqym');
 const paypal = require('@paypal/checkout-server-sdk');
 
 let environment = new paypal.core.SandboxEnvironment('YOUR_PAYPAL_CLIENT_ID', 'YOUR_PAYPAL_CLIENT_SECRET'); // Remplacez par vos identifiants
@@ -54,19 +55,18 @@ module.exports.capturePaypalOrder = async (req, res) => {
 
 // Route pour créer une commande et effectuer le paiement
 module.exports.createOrder = async (req, res) => {
-    const { nom, prenom, email, address, city, postalCode, country, mobile, articles, status, deliver, paymentMethod } = req.body;
-
+    const { nom, prenom, email, address, complement, city, postalCode, country, mobile, articles, status, deliver, paymentMethod, userId } = req.body;
     try {
         // Calculer le montant total à partir des articles
         const montantTotal = articles.reduce((acc, article) => acc + article.price * article.quantity, 0);
 
-        // Création de l'intention de paiement et confirmation immédiate
+        // Création de l'intention de paiement
         const paymentIntent = await stripe.paymentIntents.create({
             amount: montantTotal * 100, // Montant total en centimes
             currency: 'eur',
             payment_method: paymentMethod, // ID de la méthode de paiement
             confirm: true, // Confirmation immédiate
-            return_url: "https://hathyre.com/", // URL de retour après le paiement
+            return_url: "http://localhost:3000/payment-validate/3D-secure/", // URL de retour après le paiement
             automatic_payment_methods: {
                 enabled: true, // Méthodes de paiement automatiques
             },
@@ -74,7 +74,6 @@ module.exports.createOrder = async (req, res) => {
 
         // Vérifier si le paiement nécessite une action supplémentaire (3D Secure)
         if (paymentIntent.status === "requires_action" && paymentIntent.next_action) {
-            // Si une action supplémentaire est nécessaire (par exemple, 3D Secure)
             return res.status(200).json({
                 success: false,
                 requires_action: true,
@@ -90,6 +89,7 @@ module.exports.createOrder = async (req, res) => {
                 prenom,
                 email,
                 address,
+                complement,
                 city, 
                 postalCode, 
                 country,
@@ -103,7 +103,19 @@ module.exports.createOrder = async (req, res) => {
                 paymentMethod: paymentMethod // Stocker le type de méthode de paiement
             });
 
-            await newOrder.save(); // Enregistrer la commande dans la base de données
+            const savedOrder = await newOrder.save();
+
+            // Mettre à jour les achats de l'utilisateur si la commande a réussi
+            const client = await Client.findById(userId); // Trouver l'utilisateur dans la base de données
+            if (!client) {
+                return res.status(400).json({ success: false, message: "Utilisateur non trouvé" });
+            }
+
+            // Si l'utilisateur existe, mettre à jour ses achats
+            client.purchases = client.purchases || []; // Assurez-vous que 'purchases' est un tableau
+            client.purchases.push(savedOrder._id); // Ajoutez l'ID de la nouvelle commande dans les achats
+            await client.save(); // Enregistrez les modifications
+
 
             return res.status(201).json({
                 message: "Paiement réussi",
@@ -125,6 +137,27 @@ module.exports.createOrder = async (req, res) => {
         res.status(500).json({ message: "Une erreur s'est produite lors de la création de la commande.", error: error.message });
     }
 };
+
+// Nouvelle route pour vérifier l'état du PaymentIntent
+module.exports.checkPaymentIntent = async (req, res) => {
+    const { paymentIntentId } = req.params;
+
+    try {
+        const paymentIntent = await stripe.paymentIntents.retrieve(paymentIntentId);
+
+        if (paymentIntent.status === 'succeeded') {
+            // Traitement du succès
+            return res.status(200).json({ success: true, status: paymentIntent.status });
+        } else {
+            // Traitement des autres statuts
+            return res.status(200).json({ success: false, status: paymentIntent.status });
+        }
+    } catch (error) {
+        console.error('Erreur lors de la vérification du PaymentIntent :', error);
+        return res.status(500).json({ message: "Erreur lors de la vérification du paiement.", error: error.message });
+    }
+};
+
 
 
 

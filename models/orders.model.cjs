@@ -10,6 +10,7 @@ const validateEmail = (email) => {
 const articleSchema = new mongoose.Schema({
     productId: { type: String, required: true },
     productName: { type: String, required: true },
+    productImage: { type: String, required: true },
     quantity: { type: Number, required: true, min: 1 },
     price: { type: Number, required: true, min: 0 }
 });
@@ -32,6 +33,9 @@ const orderSchema = new mongoose.Schema({
     address: {
         type: String,
         required: true,
+    },
+    complement: {
+        type: String,
     },
     city: {
         type: String,
@@ -76,6 +80,12 @@ const orderSchema = new mongoose.Schema({
         type: String,
         enum: ['Colissimo','Chronopost','DHL','FedEx','UPS','TNT'],
         default: 'Chronopost',
+        index: true, // Index pour optimiser les requêtes sur ce champ
+    },
+    deliverLink: {
+        type: String,
+        enum: ['https://www.laposte.fr/outils/suivre-vos-envois','https://www.dhl.com/fr-fr/home/suivi.html','https://www.fedex.com/fr-fr/home.html','https://www.ups.com/fr/en/Home.page','https://www.tnt.com/express/fr_fr/site/outils-expedition/suivi.html'],
+        default: 'https://www.laposte.fr/outils/suivre-vos-envois',
         index: true, // Index pour optimiser les requêtes sur ce champ
     },
     orderNumber: {

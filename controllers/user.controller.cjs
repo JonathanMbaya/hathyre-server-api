@@ -14,12 +14,6 @@ module.exports.loginAdmin = async (req, res) => {
       return res.status(404).json({ message: "L'utilisateur n'existe pas" });
     }
 
-    // Vérification du mot de passe
-    // const passwordMatch = await bcrypt.compare(password, user.password);
-    // if (!passwordMatch) {
-    //   return res.status(401).json({ message: "Mot de passe incorrect" });
-    // }
-
     const passwordMatch = await User.findOne({password});
     if (!passwordMatch) {
       return res.status(401).json({ message: "Mot de passe incorrect" });

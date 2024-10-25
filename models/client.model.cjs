@@ -46,6 +46,9 @@ const clientSchema = new mongoose.Schema({
         type: Boolean, 
         default: false 
     }, // Indique si l'email a été vérifié
+    purchases: {
+        type: [String],  // Tableau des IDs des produits favoris par exemple
+    },
     favoris: {
         type: [String],  // Tableau des IDs des produits favoris par exemple
     },
