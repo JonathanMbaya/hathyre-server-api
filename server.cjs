@@ -2,7 +2,7 @@ const express = require("express");
 const compression = require('compression');
 const cors = require('cors');
 const connectDB = require("./config/db.cjs");
-const stripe = require("stripe")("sk_test_51PFebILEHh2o4Mgieyrcbf461euTJRaK3DdRFzLWfQ88rnCpRaJmYx3MUOhhNQAoXLBesgL5uQGqnys9FJsYbTVP00W4HbXqym")
+const stripe = require("stripe")("sk_test_51QDk8VJNZjtjPF39l0U78WkKekEgOm01bLvNzTsS5aNjzVnkK8hviLfuMgFOI5CFvfHW9aWQ5oLuUp4RWu67JVXL00mq0M7Brf")
 const port = process.env.PORT || 8080;
 
 // Connexion à la base de données

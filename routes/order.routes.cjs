@@ -40,7 +40,7 @@ router.post('/paypal/orders/:orderId/capture', capturePaypalOrder);
 // Route pour rembourser 
 router.post('/stripe/refund', refunds);
 
-// Route pour annuler un paiement
+// Route pour annuler un paiementss
 router.delete('/stripe/cancel', cancelledPay);
 
 module.exports = router;

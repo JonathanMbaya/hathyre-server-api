@@ -1,6 +1,6 @@
 const Order = require("../models/orders.model.cjs");
 const Client = require("../models/client.model.cjs");
-const stripe = require('stripe')('sk_test_51PFebILEHh2o4Mgieyrcbf461euTJRaK3DdRFzLWfQ88rnCpRaJmYx3MUOhhNQAoXLBesgL5uQGqnys9FJsYbTVP00W4HbXqym');
+const stripe = require('stripe')('sk_test_51QDk8VJNZjtjPF39l0U78WkKekEgOm01bLvNzTsS5aNjzVnkK8hviLfuMgFOI5CFvfHW9aWQ5oLuUp4RWu67JVXL00mq0M7Brf');
 const paypal = require('@paypal/checkout-server-sdk');
 
 let environment = new paypal.core.SandboxEnvironment('YOUR_PAYPAL_CLIENT_ID', 'YOUR_PAYPAL_CLIENT_SECRET'); // Remplacez par vos identifiants
@@ -66,7 +66,7 @@ module.exports.createOrder = async (req, res) => {
             currency: 'eur',
             payment_method: paymentMethod, // ID de la méthode de paiement
             confirm: true, // Confirmation immédiate
-            return_url: "http://localhost:3000/payment-validate/3D-secure/", // URL de retour après le paiement
+            return_url: "https://www.hathyre.com/payment-validate/3D-secure/", // URL de retour après le paiement
             automatic_payment_methods: {
                 enabled: true, // Méthodes de paiement automatiques
             },
