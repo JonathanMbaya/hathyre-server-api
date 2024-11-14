@@ -1,6 +1,6 @@
 const Order = require("../models/orders.model.cjs");
 const Client = require("../models/client.model.cjs");
-const stripe = require('stripe')('sk_test_51QDk8VJNZjtjPF39l0U78WkKekEgOm01bLvNzTsS5aNjzVnkK8hviLfuMgFOI5CFvfHW9aWQ5oLuUp4RWu67JVXL00mq0M7Brf');
+const stripe = require('stripe')('sk_test_51PFebILEHh2o4Mgieyrcbf461euTJRaK3DdRFzLWfQ88rnCpRaJmYx3MUOhhNQAoXLBesgL5uQGqnys9FJsYbTVP00W4HbXqym');
 const paypal = require('@paypal/checkout-server-sdk');
 
 let environment = new paypal.core.SandboxEnvironment('YOUR_PAYPAL_CLIENT_ID', 'YOUR_PAYPAL_CLIENT_SECRET'); // Remplacez par vos identifiants
@@ -106,16 +106,14 @@ module.exports.createOrder = async (req, res) => {
             const savedOrder = await newOrder.save();
 
             // Mettre à jour les achats de l'utilisateur si la commande a réussi
-            const client = await Client.findById(userId); // Trouver l'utilisateur dans la base de données
-            if (!client) {
-                return res.status(400).json({ success: false, message: "Utilisateur non trouvé" });
+            if (userId) {
+                const client = await Client.findById(userId); // Trouver l'utilisateur dans la base de données
+
+                // Si l'utilisateur existe, mettre à jour ses achats
+                client.purchases = client.purchases || []; // Assurez-vous que 'purchases' est un tableau
+                client.purchases.push(savedOrder._id); // Ajoutez l'ID de la nouvelle commande dans les achats
+                await client.save(); // Enregistrez les modifications
             }
-
-            // Si l'utilisateur existe, mettre à jour ses achats
-            client.purchases = client.purchases || []; // Assurez-vous que 'purchases' est un tableau
-            client.purchases.push(savedOrder._id); // Ajoutez l'ID de la nouvelle commande dans les achats
-            await client.save(); // Enregistrez les modifications
-
 
             return res.status(201).json({
                 message: "Paiement réussi",
