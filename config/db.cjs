@@ -1,14 +1,20 @@
 const mongoose = require('mongoose');
+const dns = require("dns");
+
+dns.setServers([
+  '1.1.1.1',
+  '8.8.8.8'
+]);
 
 module.exports = () => {
   mongoose.set("strictQuery", false);
   
   mongoose
-  .connect("mongodb+srv://jonathanmbaya13:hathyre1234@app-hathyre.grr5ukx.mongodb.net/")
-  .then(() => {
-    console.log('Mongodb connected....');
-  })
-  .catch(err => console.log(err.message));
+    .connect("mongodb+srv://jonathanmbaya13:hathyre1234@app-hathyre.grr5ukx.mongodb.net/")
+    .then(() => {
+      console.log('Mongodb connected....');
+    })
+    .catch(err => console.log(err.message));
 
   mongoose.connection.on('connected', () => {
     console.log('Mongoose connected to db...');

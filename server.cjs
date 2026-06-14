@@ -1,8 +1,10 @@
+require('dotenv').config();
+
 const express = require("express");
 const compression = require('compression');
 const cors = require('cors');
 const connectDB = require("./config/db.cjs");
-const stripe = require("stripe")("sk_test_51PFebILEHh2o4Mgieyrcbf461euTJRaK3DdRFzLWfQ88rnCpRaJmYx3MUOhhNQAoXLBesgL5uQGqnys9FJsYbTVP00W4HbXqym")
+const stripe = require("stripe")(process.env.STRIPE)
 const port = process.env.PORT || 8080;
 
 // Connexion à la base de données
