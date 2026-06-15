@@ -1,5 +1,4 @@
 const Product = require("../models/product.model.cjs");
-const path = require('path');
 const multer = require('multer');
 const { CloudinaryStorage } = require('multer-storage-cloudinary');
 const cloudinary = require('../config/cloudinaryConfig.cjs'); // Importer la configuration Cloudinary
@@ -19,9 +18,17 @@ const upload = multer({ storage: storage });
 module.exports.getProducts = async (req, res) => {
   try {
     // Récupérer tous les produits de la base de données
-    const products = await Product.find();
+    // const products = await Product.find();
+    
+    const page = Number(req.query.page) || 1;
+    const limit = Number(req.query.limit) || 20;
 
-    // Répondre avec tous les produits récupérés
+    const products = await Product.find()
+      .select("name price image image2 promo stock category")
+      .skip((page - 1) * limit)
+      .limit(limit)
+      .lean();
+
     res.status(200).json(products);
     
   } catch (error) {
@@ -68,7 +75,7 @@ module.exports.getProductsFilters = async (req, res) => {
 
 module.exports.getOneProduct = async (req, res) => {
   try {
-    const product = await Product.findById(req.params.id);
+    const product = await Product.findById(req.params.id).lean();
     if (!product) {
       return res.status(404).json({ message: "Ce produit n'existe pas" });
     }
@@ -143,13 +150,16 @@ module.exports.deleteProduct = async (req, res) => {
 };
 
 // Assurez-vous d'importer le modèle Product si nécessaire
-
 module.exports.searchProducts = async (req, res) => {
   try {
-    const searchTerm = req.params.q;
-    const regex = new RegExp(searchTerm, 'i'); // Expression régulière pour rechercher les noms commençant par le terme de recherche, 'i' pour insensible à la casse
-    const products = await Product.find({ name: { $regex: regex } });
+    const products = await Product.find({
+      $text: {
+        $search: req.params.q,
+      },
+    }).lean();
+
     res.status(200).json(products);
+
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
@@ -179,7 +189,7 @@ module.exports.dislikeProduct = async (req, res) => {
       { new: true }
     );
 
-    const dislikeCount = product.likes.length; // Obtenir le nombre total de dislikes après le retrait
+    const dislikeCount = product.likes.length;
 
     res.status(200).json({ product, dislikeCount });
   } catch (error) {
@@ -195,9 +205,11 @@ module.exports.getLatestProducts = async (req, res) => {
     // Si le paramètre "latest" est présent, récupérer uniquement les 4 derniers produits
     let products;
     if (latest) {
-      products = await Product.find({})
-        .sort({ createdAt: -1 }) // Tri par ordre décroissant de createdAt
-        .limit(6); // Limiter les résultats à 6
+      products = await Product.find()
+        .sort({ createdAt: -1 })
+        .limit(6)
+        .select("name price image image2 promo")
+        .lean();
     } else {
       // Sinon, renvoyer tous les produits
       products = await Product.find({});
@@ -210,14 +222,23 @@ module.exports.getLatestProducts = async (req, res) => {
   }
 };
 
-module.exports.getCatProducts = async (category) => {
+module.exports.getCatProducts = async (req, res) => {
   try {
+    const { category } = req.params;
+
     const catProducts = await Product.find({ category })
-    res.status(200).json(catProducts);
-    return catProducts;
+      .select("name price image promo stock category")
+      .lean();
+
+    return res.status(200).json(catProducts);
 
   } catch (error) {
+
     console.error("Erreur lors de la récupération des produits :", error);
-    throw error;
+
+    return res.status(500).json({
+      message: "Erreur serveur"
+    });
+
   }
 };

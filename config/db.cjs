@@ -12,7 +12,7 @@ module.exports = () => {
   mongoose.set("strictQuery", false);
   
   mongoose
-    .connect("mongodb+srv://jonathanmbaya13:hathyre1234@app-hathyre.grr5ukx.mongodb.net/")
+    .connect(process.env.MONGO_URI)
     .then(() => {
       console.log('Mongodb connected....');
     })

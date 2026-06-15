@@ -5,36 +5,50 @@ const productSchema = new mongoose.Schema(
     name: {
       type: String,
       required: true,
+      trim: true,
     },
+
     price: {
       type: Number,
       required: true,
+      min: 0,
     },
+
     description: {
       type: String,
       required: true,
     },
+
     promo: {
       type: Number,
+      default: 0,
     },
+
     stock: {
       type: Number,
       required: true,
+      min: 0,
     },
+
     image: {
-      type: String, // URL de l'image téléchargée
+      type: String,
       required: true,
     },
+
     image2: {
-      type: String, // URL de l'image téléchargée
+      type: String,
       required: true,
     },
+
     likes: {
       type: [String],
+      default: [],
     },
+
     category: {
       type: String,
-      enum: ['Savon', 'Accessoires', 'Beurres et huiles'],
+      enum: ["Savon", "Accessoires", "Beurres et huiles"],
+      required: true,
     },
 
     ingredients: {
@@ -44,6 +58,7 @@ const productSchema = new mongoose.Schema(
 
     conseils: {
       type: String,
+      default: "",
     },
   },
   {
@@ -51,5 +66,8 @@ const productSchema = new mongoose.Schema(
   }
 );
 
-const Product = mongoose.model('Product', productSchema);
-module.exports = Product;
+productSchema.index({ category: 1 });
+productSchema.index({ createdAt: -1 });
+productSchema.index({ name: "text" });
+
+module.exports = mongoose.model("Product", productSchema);
