@@ -1,65 +1,100 @@
 const mongoose = require('mongoose');
 const crypto = require('crypto');
-const bcrypt = require('bcrypt');
 
-const clientSchema = new mongoose.Schema({
+const clientSchema = new mongoose.Schema(
+  {
     civilite: {
-        type: String,
-        enum: ['Madame', 'Monsieur', 'Non défini'], 
+      type: String,
+      enum: ['Madame', 'Monsieur', 'Non défini'],
+      default: 'Non défini',
+      index: true
     },
+
     nom: {
-        type: String,
-        required: true,
+      type: String,
+      required: true,
+      trim: true,
+      index: true
     },
+
     prenom: {
-        type: String,
-        required: true,
+      type: String,
+      required: true,
+      trim: true,
+      index: true
     },
+
     clientEmail: {
-        type: String,
-        required: true,
-        unique: true,
+      type: String,
+      required: true,
+      unique: true,
+      lowercase: true,
+      trim: true,
+      index: true
     },
+
     clientPassword: {
-        type: String,
-        required: true,
+      type: String,
+      required: true,
+      select: false // 🔥 important sécurité
     },
+
     birthday: {
-        type: Date,
+      type: Date
     },
+
     address: {
-        type: String,
+      type: String,
+      trim: true
     },
+
     mobile: {
-        type: String,
+      type: String,
+      trim: true
     },
+
     token: {
-        type: String,
-        unique: true,
-        default: () => crypto.randomBytes(5).toString('hex')
+      type: String,
+      unique: true,
+      index: true,
+      default: () => crypto.randomBytes(5).toString('hex')
     },
-    emailVerificationToken: { 
-        type: String, 
-        default: null
-    }, // Token pour la vérification d'email
-    isEmailVerified: { 
-        type: Boolean, 
-        default: false 
-    }, // Indique si l'email a été vérifié
+
+    emailVerificationToken: {
+      type: String,
+      default: null,
+      index: true
+    },
+
+    isEmailVerified: {
+      type: Boolean,
+      default: false,
+      index: true
+    },
+
     purchases: {
-        type: [String],  // Tableau des IDs des produits favoris par exemple
+      type: [String],
+      default: []
     },
+
     favoris: {
-        type: [String],  // Tableau des IDs des produits favoris par exemple
+      type: [String],
+      default: []
     },
+
     montantDepense: {
-        type: Number,
-        default: 0,
+      type: Number,
+      default: 0,
+      min: 0
     }
-}, {
-    timestamps: true,
-});
+  },
+  {
+    timestamps: true
+  }
+);
 
-const Client = mongoose.model('Client', clientSchema);
+// Index composés utiles
+clientSchema.index({ clientEmail: 1 });
+clientSchema.index({ nom: 1, prenom: 1 });
 
-module.exports = Client;
+module.exports = mongoose.model('Client', clientSchema);

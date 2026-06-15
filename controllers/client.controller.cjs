@@ -1,43 +1,55 @@
+require('dotenv').config(); // Pour utiliser les variables d'environnement
 const Client = require("../models/client.model.cjs");
 const bcrypt = require("bcrypt");
 const jwt = require('jsonwebtoken');
-const nodemailer = require('nodemailer');
 const crypto = require('crypto');
-require('dotenv').config(); // Pour utiliser les variables d'environnement
-const emailjs = require('emailjs-com')
+
 
 
 module.exports.login = async (req, res) => {
   const { email, password } = req.body;
 
   try {
-    // Recherche de l'utilisateur dans la base de données par son email
-    const client = await Client.findOne({ clientEmail: email});
+    const client = await Client.findOne({ clientEmail: email })
+      .select("+clientPassword");
 
-    // Vérification de l'existence de l'utilisateur
     if (!client) {
-      return res.status(404).json({ message: "L'utilisateur n'existe pas" });
+      return res.status(404).json({ message: "Utilisateur introuvable" });
     }
 
-    // Vérification du mot de passe
-    const passwordMatch = await bcrypt.compare(password, client.clientPassword);
+    const passwordMatch = await bcrypt.compare(
+      password,
+      client.clientPassword
+    );
+
     if (!passwordMatch) {
       return res.status(401).json({ message: "Mot de passe incorrect" });
     }
 
-    // Vérification de la confirmation de l'email
-    if (!client.isEmailVerified && client.isEmailVerified == false) {
-      return res.status(403).json({ message: "Veuillez confirmer votre adresse email avant de vous connecter." });
+    if (!client.isEmailVerified) {
+      return res.status(403).json({
+        message: "Email non vérifié"
+      });
     }
 
-    // Création d'un token JWT
-    const token = jwt.sign({ clientId: client._id }, 'your_secret_token_key', { expiresIn: '1h' });
+    const token = jwt.sign(
+      { clientId: client._id },
+      process.env.JWT_SECRET,
+      { expiresIn: "1h" }
+    );
 
-    // Envoi de la réponse avec le token et les informations de l'utilisateur
-    res.status(200).json({ client: { _id: client._id, clientEmail: client.clientEmail, nom: client.nom, prenom: client.prenom, token: client.token }, token });
+    return res.status(200).json({
+      token,
+      client: {
+        _id: client._id,
+        nom: client.nom,
+        prenom: client.prenom,
+        clientEmail: client.clientEmail
+      }
+    });
 
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    return res.status(500).json({ message: error.message });
   }
 };
 
@@ -47,22 +59,31 @@ module.exports.logout = async (req, res) => {
 
 module.exports.getClients = async (req, res) => {
   try {
-    const clients = await Client.find();
-    res.status(200).json(clients);
+    const clients = await Client.find()
+      .select("nom prenom clientEmail isEmailVerified createdAt")
+      .lean();
+
+    return res.status(200).json(clients);
+
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    return res.status(500).json({ message: error.message });
   }
 };
 
 module.exports.getOneClient = async (req, res) => {
   try {
-    const client = await Client.findById(req.params.id);
+    const client = await Client.findById(req.params.id)
+      .select("-clientPassword")
+      .lean();
+
     if (!client) {
-      return res.status(404).json({ message: "Cet utilisateur n'existe pas" });
+      return res.status(404).json({ message: "Utilisateur introuvable" });
     }
-    res.status(200).json(client);
+
+    return res.status(200).json(client);
+
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    return res.status(500).json({ message: error.message });
   }
 };
 
@@ -74,50 +95,36 @@ function generateToken() {
 module.exports.createClient = async (req, res) => {
   const { nom, prenom, clientEmail, clientPassword, civilite } = req.body;
 
-  // Validation des champs requis
-  if (!nom || !prenom || !clientEmail || !clientPassword) {
-      return res.status(400).json({ message: "Tous les champs sont requis" });
-  }
-
   try {
-      // Vérifier si le client existe déjà
-      const existingClient = await Client.findOne({ clientEmail });
-      if (existingClient) {
-          return res.status(400).json({ message: "Cet utilisateur existe déjà" });
-      }
+    const existingClient = await Client.findOne({ clientEmail });
 
-      // Crypter le mot de passe
-      const salt = await bcrypt.genSalt(10);
-      const hashedPassword = await bcrypt.hash(clientPassword, salt);
+    if (existingClient) {
+      return res.status(400).json({ message: "Utilisateur existe déjà" });
+    }
 
-      // Générer un token de vérification
-      const emailVerificationToken = generateToken();
+    const hashedPassword = await bcrypt.hash(clientPassword, 10);
 
-      // Créer un nouvel utilisateur
-      const newClient = new Client({
-          civilite,
-          nom,
-          prenom,
-          clientEmail,
-          clientPassword: hashedPassword, // Stocker le mot de passe crypté
-          emailVerificationToken, // Stocker le token de vérification
-      });
+    const emailVerificationToken = crypto.randomBytes(32).toString("hex");
 
-      // Sauvegarder l'utilisateur dans la base de données
-      await newClient.save();
+    const newClient = new Client({
+      civilite,
+      nom,
+      prenom,
+      clientEmail,
+      clientPassword: hashedPassword,
+      emailVerificationToken,
+      isEmailVerified: false
+    });
 
-      // Option : Envoi de l'email de vérification (si la fonction est activée)
-      // await sendVerificationEmail(clientEmail, emailVerificationToken);
+    await newClient.save();
 
-      // Répondre avec un succès, et envoyer le token de vérification au frontend
-      res.status(201).json({ 
-          message: "Utilisateur créé. Veuillez vérifier votre email pour confirmer votre inscription.",
-          emailVerificationToken  // Ajoute le token pour que le frontend puisse l'utiliser
-      });
+    // ❌ ne jamais renvoyer le token
+    return res.status(201).json({
+      message: "Compte créé. Vérifiez votre email."
+    });
 
   } catch (error) {
-      console.error("Erreur lors de la création de l'utilisateur :", error);
-      res.status(500).json({ message: "Erreur lors de la création de l'utilisateur. Veuillez réessayer plus tard." });
+    return res.status(500).json({ message: error.message });
   }
 };
 
@@ -126,21 +133,21 @@ module.exports.verifyEmail = async (req, res) => {
   const { token } = req.query;
 
   try {
-      const client = await Client.findOne({ emailVerificationToken: token });
-      if (!client) {
-          return res.status(400).json({ message: 'Token invalide ou expiré' });
-      }
+    const client = await Client.findOne({ emailVerificationToken: token });
 
-      // Si le token est valide, confirmer l'email
-      client.isEmailVerified = true;
-      client.emailVerificationToken = null; // Supprimer le token après vérification
-      await client.save();
+    if (!client) {
+      return res.status(400).json({ message: "Token invalide" });
+    }
 
-      return res.redirect('https://www.hathyre.com/confirm-account'); 
+    client.isEmailVerified = true;
+    client.emailVerificationToken = null;
 
-      // res.status(200).json({ message: 'Email vérifié avec succès' });
+    await client.save();
+
+    return res.redirect("https://www.hathyre.com/confirm-account");
+
   } catch (error) {
-      res.status(500).json({ message: error.message });
+    return res.status(500).json({ message: error.message });
   }
 };
 
@@ -188,7 +195,9 @@ exports.getFavorites = async (req, res) => {
     const clientId = req.params.userId;
 
     // Trouver le client et récupérer les favoris
-    const client = await Client.findById(clientId).select('favoris');
+    const client = await Client.findById(clientId)
+    .select("favoris")
+    .lean();
 
     if (!client) {
       return res.status(404).json({ message: 'Client non trouvé.' });
@@ -215,7 +224,7 @@ exports.addFavorite = async (req, res) => {
 
     // Ajouter le produit aux favoris s'il n'est pas déjà présent
     if (!client.favoris.includes(productId)) {
-      client.favoris.push(productId);
+      client.favoris.addToSet(productId);
       await client.save();
     }
 
@@ -239,7 +248,7 @@ exports.removeFavorite = async (req, res) => {
     }
 
     // Supprimer le produit des favoris
-    client.favoris = client.favoris.filter(fav => fav !== productId);
+    client.favoris.pull(productId);
     await client.save();
 
     res.status(200).json({ message: 'Produit retiré des favoris.', favorites: client.favoris });
